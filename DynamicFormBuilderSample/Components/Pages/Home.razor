@@ -1,0 +1,203 @@
+﻿@page "/"
+
+
+@using Microsoft.AspNetCore.Components.CompilerServices
+@using System.ComponentModel.DataAnnotations
+@using Syncfusion.Blazor.Inputs
+
+<h3>Dynamic form</h3>
+<EditForm Model="@employeeDetails" OnValidSubmit="@Submit">
+    <DataAnnotationsValidator />
+    @CreateComponent()
+    <ValidationSummary></ValidationSummary>
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</EditForm>
+
+@code {
+
+    EmployeeDetails employeeDetails;
+    protected override void OnInitialized()
+    {
+        employeeDetails = new EmployeeDetails();
+    }
+    Countries countries = new Countries();
+    Cities cities = new Cities();
+
+    public RenderFragment CreateComponent() => builder =>
+    {
+        var proList = typeof(EmployeeDetails).GetProperties();
+        foreach (var prp in proList)
+        {
+            Type T = prp.GetType();
+            if (prp.GetCustomAttributes(typeof(DataTypeAttribute), false).Length != 0)
+            {
+                var attrList = (DataTypeAttribute)prp.GetCustomAttributes(typeof(DataTypeAttribute), false).First();
+                var displayLabel = (DisplayAttribute)prp.GetCustomAttributes(typeof(DisplayAttribute), false).First();
+                // Get the initial property value
+                var propInfoValue = typeof(EmployeeDetails).GetProperty(prp.Name);
+                // Create an expression to set the ValueExpression-attribute.
+                var constant = System.Linq.Expressions.Expression.Constant(employeeDetails, typeof(EmployeeDetails));
+                var exp = System.Linq.Expressions.MemberExpression.Property(constant, prp.Name);
+                switch (attrList.DataType)
+                {
+                    case DataType.Text:
+                    case DataType.EmailAddress:
+                    case DataType.PhoneNumber:
+                    case DataType.MultilineText:
+                        {
+                            builder.OpenComponent(0, typeof(SfTextBox));
+                            // Create the handler for ValueChanged. I use reflection to the value.
+                            builder.AddAttribute(3, "ValueChanged", RuntimeHelpers.TypeCheck<Microsoft.AspNetCore.Components.EventCallback<System.String>>(Microsoft.AspNetCore.Components.EventCallback.Factory.Create<System.String>(this, Microsoft.AspNetCore.Components.EventCallback.Factory.CreateInferred(this, __value => propInfoValue.SetValue(employeeDetails, __value), (string)propInfoValue.GetValue(employeeDetails)))));
+                            builder.AddAttribute(4, "ValueExpression", System.Linq.Expressions.Expression.Lambda<Func<string>>(exp));
+                            if (attrList.DataType == DataType.MultilineText)
+                                builder.AddAttribute(5, "Multiline", true);
+                            break;
+                        }
+                    case DataType.Date:
+                        builder.OpenComponent(0, typeof(SfDatePicker<DateTime?>));
+                        builder.AddAttribute(3, "ValueChanged", RuntimeHelpers.TypeCheck<Microsoft.AspNetCore.Components.EventCallback<DateTime?>>(Microsoft.AspNetCore.Components.EventCallback.Factory.Create<DateTime?>(this, Microsoft.AspNetCore.Components.EventCallback.Factory.CreateInferred(this, __value => propInfoValue.SetValue(employeeDetails, __value), (DateTime?)propInfoValue.GetValue(employeeDetails)))));
+                        builder.AddAttribute(4, "ValueExpression", System.Linq.Expressions.Expression.Lambda<Func<DateTime?>>(exp));
+                        break;
+                    case DataType.Duration:
+                        builder.OpenComponent(0, typeof(SfNumericTextBox<decimal?>));
+                        builder.AddAttribute(3, "ValueChanged", RuntimeHelpers.TypeCheck<Microsoft.AspNetCore.Components.EventCallback<decimal?>>(Microsoft.AspNetCore.Components.EventCallback.Factory.Create<decimal?>(this, Microsoft.AspNetCore.Components.EventCallback.Factory.CreateInferred(this, __value => propInfoValue.SetValue(employeeDetails, __value), (decimal?)propInfoValue.GetValue(employeeDetails)))));
+                        builder.AddAttribute(4, "ValueExpression", System.Linq.Expressions.Expression.Lambda<Func<decimal?>>(exp));
+                        break;
+                    case DataType.Custom:
+                        if (attrList.CustomDataType == "DropdownList")
+                        {
+                            builder.OpenComponent(0, typeof(Syncfusion.Blazor.DropDowns.SfDropDownList<string, Countries>));
+                            builder.AddAttribute(1, "DataSource", countries.GetCountries());
+                            builder.AddAttribute(4, "ChildContent", (Microsoft.AspNetCore.Components.RenderFragment)((builder2) =>
+                            {
+                                builder2.AddMarkupContent(5, "\r\n    ");
+                                builder2.OpenComponent<Syncfusion.Blazor.DropDowns.DropDownListFieldSettings>
+                              (6);
+
+                                builder2.AddAttribute(7, "Value", "Code");
+                                builder2.AddAttribute(8, "Text", "Name");
+                                builder2.CloseComponent();
+                                builder2.AddMarkupContent(9, "\r\n");
+                            }));
+
+                        }
+                        else if (attrList.CustomDataType == "ComboBox")
+                        {
+                            builder.OpenComponent(0, typeof(Syncfusion.Blazor.DropDowns.SfComboBox<string, Cities>));
+                            builder.AddAttribute(1, "DataSource", cities.GetCities());
+                            builder.AddAttribute(4, "ChildContent", (Microsoft.AspNetCore.Components.RenderFragment)((builder2) =>
+                            {
+                                builder2.AddMarkupContent(5, "\r\n    ");
+                                builder2.OpenComponent<Syncfusion.Blazor.DropDowns.ComboBoxFieldSettings>
+                              (6);
+
+                                builder2.AddAttribute(7, "Value", "Code");
+                                builder2.AddAttribute(8, "Text", "Name");
+                                builder2.CloseComponent();
+                                builder2.AddMarkupContent(9, "\r\n");
+                            }));
+                        }
+                        builder.AddAttribute(3, "ValueChanged", RuntimeHelpers.TypeCheck<Microsoft.AspNetCore.Components.EventCallback<System.String>>(Microsoft.AspNetCore.Components.EventCallback.Factory.Create<System.String>(this, Microsoft.AspNetCore.Components.EventCallback.Factory.CreateInferred(this, __value => propInfoValue.SetValue(employeeDetails, __value), (string)propInfoValue.GetValue(employeeDetails)))));
+                        builder.AddAttribute(4, "ValueExpression", System.Linq.Expressions.Expression.Lambda<Func<string>>(exp));
+                        break;
+                    default:
+                        break;
+                }
+                var defaultValue = propInfoValue.GetValue(employeeDetails);
+                builder.AddAttribute(1, "Value", defaultValue);
+                builder.AddAttribute(6, "PlaceHolder", displayLabel.Name);
+                builder.AddAttribute(6, "FloatLabelType", FloatLabelType.Auto);
+
+                builder.CloseComponent();
+            }
+        }
+    };
+
+    public void Submit()
+    {
+
+    }
+
+    public class EmployeeDetails
+    {
+        [Required]
+        [Display(Name ="First Name")]
+        [DataType(DataType.Text)]
+        public string FirstName { get; set; }
+        [Display(Name = "Last Name")]
+        [DataType(DataType.Text)]
+        public string LastName { get; set; }
+        [Required]
+        [Display(Name = "Email Address")]
+        [DataType(DataType.EmailAddress)]
+        [EmailAddress]
+        public string Email { get; set; }
+        [Required]
+        [Display(Name = "PhoneNumber")]
+        [DataType(DataType.PhoneNumber)]
+        [Phone]
+        public string PhoneNumber { get; set; }
+        [Required]
+        [Display(Name = "Date of Birth")]
+        [DataType(DataType.Date)]
+        public DateTime? DOB { get; set; }
+        [Required]
+        [DataType(DataType.Duration)]
+        [Display(Name = "Total Experience")]
+        [Range(0, 20, ErrorMessage = "The Experience range should be 0 to 20")]
+        public decimal? TotalExperience { get; set; }
+        [Required]
+        [Display(Name = "Select a Country")]
+        [DataType("DropdownList")]
+        public string Country { get; set; }
+        [Required]
+        [Display(Name = "Select a City")]
+        [DataType("ComboBox")]
+        public string City { get; set; }
+        [Required]
+        [DataType(DataType.MultilineText)]
+        [Display(Name = "Address")]
+        public string Address { get; set; }
+    }
+
+    public class Countries
+    {
+        public string Name { get; set; }
+        public string Code { get; set; }
+
+        public List<Countries> GetCountries()
+        {
+            List<Countries> Country = new List<Countries>
+            {
+                new Countries() { Name = "Australia", Code = "AU" },
+                new Countries() { Name = "United Kingdom", Code = "UK" },
+                new Countries() { Name = "United States", Code = "US" },
+            };
+            return Country;
+        }
+    }
+    public class Cities
+    {
+        public string Name { get; set; }
+        public string Code { get; set; }
+        public string CountryCode { get; set; }
+        public List<Cities> GetCities()
+        {
+            List<Cities> CityName = new List<Cities>
+            {
+                new Cities() { Name = "New York", CountryCode = "US", Code="US-101" },
+                new Cities() { Name = "Virginia", CountryCode = "US", Code="US-102" },
+                new Cities() { Name = "Washington", CountryCode = "US", Code="US-103" },
+                new Cities() { Name = "Victoria", CountryCode = "AU", Code="AU-101" },
+                new Cities() { Name = "Tasmania", CountryCode = "AU", Code="AU-102" },
+                new Cities() { Name = "Queensland", CountryCode = "AU", Code="AU-103" },
+                new Cities() { Name = "London", CountryCode = "UK", Code="UK-101" },
+                new Cities() { Name = "Manchester", CountryCode = "UK", Code="UK-102" },
+                new Cities() { Name = "Ashford", CountryCode = "UK", Code="UK-103" }
+            };
+            return CityName;
+        }
+    }
+}
